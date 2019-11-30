@@ -24,6 +24,10 @@ class RPC_Queue {
         var response = await this.dequeue_client.BRPOP(message.header.id, 0); //wait result
         var aftergetres = Date.now();
         response = JSON.parse(response[1]);
+        // console.log("respomseeeeee",response)
+        // console.log("IIIIIIIIIIIIIII",response.result.ctx)
+        // console.log(response.result.ctx.isInError(),":::::::::")
+
         delete response.result.timeTrack;
         response.timeTrack.beforegetres = beforegetres;
         response.timeTrack.aftergetres = aftergetres;
