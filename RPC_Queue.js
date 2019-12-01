@@ -33,7 +33,7 @@ class RPC_Queue {
     formatMSG(serviceName, methodName, param) {
         return {
             header: {
-                id: uuid(),
+                id:param.id,// uuid(),
                 serviceName: serviceName,
                 methodName: methodName,
             },

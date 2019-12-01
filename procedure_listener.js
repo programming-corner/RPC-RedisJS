@@ -11,7 +11,7 @@ class procedure_listener {
     }
 
     async startListener() {
-        console.log("listener",this.currentConsLen , this.maxConsume)
+        console.log("listener", this.currentConsLen, this.maxConsume)
         while (this.currentConsLen < this.maxConsume) {
             var callerMSG = await this.getCallerMsg();
             this.currentConsLen++;
@@ -49,7 +49,19 @@ class procedure_listener {
         res = Object.assign(callerMSG, {
             result: res
         });
-        await this.publisher.rpush(callerMSG.header.id, JSON.stringify(res)); //start rpc
+
+        console.log("&&&&&&&&&&&& befor publish res",callerMSG.header.id)
+
+     //   const result = await redis.set(key, JSON.stringify(shamu));
+
+        if (callerMSG.header.id != 1)
+            await this.publisher.rpush(callerMSG.header.id, JSON.stringify(res)); //start rpc
+
+            // else
+            // setTimeout(() => {
+            //      this.publisher.rpush(callerMSG.header.id, JSON.stringify(res)); //start rpc
+
+            // }, 10000);
         this.currentConsLen--;
         this.reStartListener(); //restart consumer
     }
