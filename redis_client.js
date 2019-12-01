@@ -22,7 +22,9 @@ module.exports = class {
         this.BRPOP = promisify(this.client.BRPOP).bind(this.client);
         this.lpush = promisify(this.client.lpush).bind(this.client);
         this.rpush = promisify(this.client.rpush).bind(this.client);
-
+        this.get = promisify(this.client.get).bind(this.client);
+        this.set = promisify(this.client.set).bind(this.client);
+        this.del = promisify(this.client.del).bind(this.client);
     }
 
     /* Calling unref() will allow this program to exit immediately after the get

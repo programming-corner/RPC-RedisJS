@@ -50,18 +50,8 @@ class procedure_listener {
             result: res
         });
 
-        console.log("&&&&&&&&&&&& befor publish res",callerMSG.header.id)
+        await this.publisher.set(callerMSG.header.id, JSON.stringify(res)); //start rpc
 
-     //   const result = await redis.set(key, JSON.stringify(shamu));
-
-        if (callerMSG.header.id != 1)
-            await this.publisher.rpush(callerMSG.header.id, JSON.stringify(res)); //start rpc
-
-            // else
-            // setTimeout(() => {
-            //      this.publisher.rpush(callerMSG.header.id, JSON.stringify(res)); //start rpc
-
-            // }, 10000);
         this.currentConsLen--;
         this.reStartListener(); //restart consumer
     }

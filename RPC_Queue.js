@@ -15,15 +15,29 @@ class RPC_Queue {
             this.dequeue_client = new redis_client(this.config); //create dedicated redis client for dequeue
         }
     }
+    
+    async getkey(key) {
+        return new Promise(async (resolve, reject) => {
+            var value = null;
+            setInterval(async () => {
+                value = await this.dequeue_client.get(key);
+                if (value) {
+                    this.dequeue_client.del(key);
+                    return resolve(value)
+                }
+            }, 100);
+        })
+    }
 
     //must check for param to throw error
     async callRemoteMethod(serviceName, queueName, methodName, param) {
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        var response = await this.dequeue_client.BRPOP(message.header.id, 0); //wait result
+        //var response = await this.dequeue_client.BRPOP(message.header.id, 0); //wait result
+        var response = await this.getkey(message.header.id)
         var aftergetres = Date.now();
-        response = JSON.parse(response[1]);
+        response = JSON.parse(response);
         delete response.result.timeTrack;
         response.timeTrack.beforegetres = beforegetres;
         response.timeTrack.aftergetres = aftergetres;
@@ -33,7 +47,7 @@ class RPC_Queue {
     formatMSG(serviceName, methodName, param) {
         return {
             header: {
-                id:param.id,// uuid(),
+                id: uuid(),
                 serviceName: serviceName,
                 methodName: methodName,
             },
