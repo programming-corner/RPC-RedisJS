@@ -15,14 +15,15 @@ class RPC_Queue {
             this.dequeue_client = new redis_client(this.config); //create dedicated redis client for dequeue
         }
     }
-    
+
     async getkey(key) {
         return new Promise(async (resolve, reject) => {
             var value = null;
-            setInterval(async () => {
+            var interval = setInterval(async () => {
                 value = await this.dequeue_client.get(key);
                 if (value) {
                     this.dequeue_client.del(key);
+                    clearInterval(interval)
                     return resolve(value)
                 }
             }, 100);
@@ -66,7 +67,7 @@ class RPC_Queue {
             throw Error(`${serviceName} is registered before`);
 
         var client_service = new redis_client(this.config); //crate dedcaited client //listener
-        var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG , callbackFun);
+        var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
         process_listener.startListener();
     }
 }
