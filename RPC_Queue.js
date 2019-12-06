@@ -45,10 +45,13 @@ class RPC_Queue {
     }
 
     formatMSG(serviceName, methodName, param) {
+
+        var parentReqId = param.parentReqId;
+        delete param.parentReqId
         return {
             header: {
                 id: uuid(),
-                parentReqId:param.parentReqId,
+                parentReqId: parentReqId,
                 serviceName: serviceName,
                 methodName: methodName,
             },
