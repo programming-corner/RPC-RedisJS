@@ -35,7 +35,6 @@ class RPC_Queue {
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        //var response = await this.dequeue_client.BRPOP(message.header.id, 0); //wait result
         var response = await this.getkey(message.header.id)
         var aftergetres = Date.now();
         response = JSON.parse(response);
@@ -49,6 +48,7 @@ class RPC_Queue {
         return {
             header: {
                 id: uuid(),
+                parentReqId:param.parentReqId,
                 serviceName: serviceName,
                 methodName: methodName,
             },
