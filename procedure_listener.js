@@ -43,7 +43,7 @@ class procedure_listener {
         } catch (error) {
             res = {
                 error: `cannot process ${callerMSG.header.methodName}`,
-                detail: error
+                detail: error.stack
             }
         }
         res = Object.assign(callerMSG, {
