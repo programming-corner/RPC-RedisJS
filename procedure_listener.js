@@ -46,12 +46,11 @@ class procedure_listener {
                 detail: error.stack
             }
         }
-        res = Object.assign(callerMSG, {
+        res = Object.assign({}, callerMSG, {
             result: res
         });
 
         await this.publisher.set(callerMSG.header.id, JSON.stringify(res)); //start rpc
-
         this.currentConsLen--;
         this.reStartListener(); //restart consumer
     }
