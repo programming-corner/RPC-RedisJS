@@ -4,6 +4,7 @@ const { promisify } = require('util');
 module.exports = class {
 
     constructor(aConfig) {
+        console.log("user Rpc connected constructor", aConfig)
         this.client = redis.createClient(aConfig.port, aConfig.host,
             { no_ready_check: true });
 

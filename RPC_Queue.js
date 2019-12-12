@@ -32,6 +32,9 @@ class RPC_Queue {
 
     //must check for param to throw error
     async callRemoteMethod(serviceName, queueName, methodName, param) {
+        if (this.resultSendClient)
+            throw Error("you arenot consumer ");
+
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
@@ -63,6 +66,10 @@ class RPC_Queue {
 
     //must check for param to throw error
     async registerRemoteService(serviceName, queueName, maxWorkingMSG, callbackFun) {
+
+        if (this.enqueue_client)
+            throw Error("you arenot aprovider ");
+
         if (registered_services.indexOf(serviceName) == -1)
             registered_services.push(serviceName);
         else
