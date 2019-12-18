@@ -1,6 +1,8 @@
-class procedure_listener {
+const EventEmitter = require('events')
+class procedure_listener extends EventEmitter {
 
     constructor(client, publisher, serviceName, queueName, maxConsume, functionLogic) {
+        super()
         this.client = client; //that consume
         this.publisher = publisher;
         this.serviceName = serviceName;
@@ -49,8 +51,10 @@ class procedure_listener {
         res = Object.assign({}, callerMSG, {
             result: res
         });
-
+        //set res to redis
         await this.publisher.set(callerMSG.header.id, JSON.stringify(res)); //start rpc
+        this.emit("message", callerMSG.header.id);
+
         this.currentConsLen--;
         this.reStartListener(); //restart consumer
     }
