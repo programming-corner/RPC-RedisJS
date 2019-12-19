@@ -51,7 +51,9 @@ class RPC_Queue {
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
         this.getCallerMsg();
         return new Promise((resolve, reject) => {
-            return this.EventEmitter.once(message.header.id, (resBody) => {
+            var id = (message.header.parentReqId !== null) ? message.header.parentReqId : message.header.id;
+            console.log(id)
+            return this.EventEmitter.once(id, (resBody) => {
                 let response = resBody
                 var aftergetres = Date.now();
                 delete response.result.timeTrack;

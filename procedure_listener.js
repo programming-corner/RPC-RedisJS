@@ -51,6 +51,8 @@ class procedure_listener {
         });
         //set res to redis
         res.reqId = callerMSG.header.id;
+        res.parentReqId = callerMSG.header.parentReqId;
+
         await this.publisher.lpush("REQresults", JSON.stringify(res)); //start rpc
 
         this.currentConsLen--;
