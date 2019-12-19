@@ -1,5 +1,5 @@
 const redis_client = require('./redis_client');
-//const EventEmitter2 = require('events')
+const EventEmitter = require('events')
 const procedure_listener = require('./procedure_listener');
 var uuid = require('uuidv4').uuid;
 var registered_services = [];
@@ -7,7 +7,6 @@ class RPC_Queue {
 
     //must check for param to throw error
     constructor(config) {
-        // this.EventEmitter2 = new EventEmitter();
         this.config = config;
         if (config.callee) {
             this.resultSendClient = new redis_client(this.config); //client to send result to user //for each RPC_queue
@@ -15,23 +14,24 @@ class RPC_Queue {
         } else {
             this.enqueue_client = new redis_client(this.config); //create dedicated redis client for enqueue
             this.dequeue_client = new redis_client(this.config); //create dedicated redis client for dequeue
+            this.EventEmitter = new EventEmitter();
         }
     }
 
-    // async getkey(key) {
-    //     return new Promise(async (resolve, reject) => {
-    //         var value = null;
-    //         var interval = setInterval(async () => {
-    //             value = await this.dequeue_client.get(key);
-    //             if (value) {
-    //                 this.dequeue_client.del(key);
-    //                 clearInterval(interval)
-    //                 return resolve(value)
-    //             }
-    //         }, 100);
-    //     })
-    // }
+    async getCallerMsg() {
+        try {
+            var reqRes = await this.dequeue_client.BRPOP('REQresults', 0);
+            reqRes = JSON.parse(reqRes[1]);
+            console.log(reqRes)
 
+            this.EventEmitter.emit(reqRes.reqId, reqRes)
+            //return reqRes;
+        } catch (e) {
+            console.log("cannot get res error >>> ", e);
+        }
+    }
+
+    // async send
 
     async getkey(reqId) {
         var value = await this.dequeue_client.get(reqId);
@@ -47,25 +47,19 @@ class RPC_Queue {
 
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
+        console.log(":::::::::::::::::::::::::::::::::::::::", message.header.id)
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        //console.log("rrrrrrrrr////////////////////////>>>", message.header.id)
-
-        // console.log(this.EventEmitter)
-        var process_listener_event = new procedure_listener()
-        console.log(":::::::::::::::::::::::::::::::::::::::")
-        return process_listener_event.on(message, async (reqId) => {
-            console.log("rrrrrrrrrrrrrrr->>>>>>>>>", reqId)
-            let response = await this.getkey(reqId)
-            console.log("rrrrrrrrrrrrrrr->>>>>>>>>", response)
-            var aftergetres = Date.now();
-            response = JSON.parse(response);
-            delete response.result.timeTrack;
-            response.timeTrack.beforegetres = beforegetres;
-            response.timeTrack.aftergetres = aftergetres;
-            return response;
-        })
-
-
+        this.getCallerMsg();
+        return new Promise((resolve, reject) => {
+            return this.EventEmitter.once(message.header.id, (resBody) => {
+                let response = resBody
+                var aftergetres = Date.now();
+                delete response.result.timeTrack;
+                response.timeTrack.beforegetres = beforegetres;
+                response.timeTrack.aftergetres = aftergetres;
+                return resolve(response);
+            });
+        });
     }
 
     formatMSG(serviceName, methodName, param) {
@@ -98,10 +92,12 @@ class RPC_Queue {
 
         var client_service = new redis_client(this.config); //crate dedcaited client //listener
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
-        // process_listener.on("message", (reqId) => {
+
+        // process_listener.on("message", (reqId, res) => {
         //     console.log("on  0000", reqId)
-        //     this.EventEmitter.emit(reqId);
+        //     //  this.EventEmitter.emit(reqId);
         // })
+        // console.log("PPPPPPPPPPPPPPPP", process_listener)
         process_listener.startListener();
     }
 }
