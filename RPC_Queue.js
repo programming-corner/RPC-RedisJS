@@ -1,5 +1,5 @@
 const redis_client = require('./redis_client');
-const EventEmitter2 = require('events')
+//const EventEmitter2 = require('events')
 const procedure_listener = require('./procedure_listener');
 var uuid = require('uuidv4').uuid;
 var registered_services = [];
@@ -7,7 +7,7 @@ class RPC_Queue {
 
     //must check for param to throw error
     constructor(config) {
-        this.EventEmitter2 = new EventEmitter();
+        // this.EventEmitter2 = new EventEmitter();
         this.config = config;
         if (config.callee) {
             this.resultSendClient = new redis_client(this.config); //client to send result to user //for each RPC_queue
@@ -48,14 +48,14 @@ class RPC_Queue {
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        console.log("rrrrrrrrr////////////////////////>>>", message.header.id)
+        //console.log("rrrrrrrrr////////////////////////>>>", message.header.id)
 
-        console.log(this.EventEmitter)
+        // console.log(this.EventEmitter)
+        var process_listener_event = new procedure_listener()
         console.log(":::::::::::::::::::::::::::::::::::::::")
-        return this.EventEmitter.on(message.header.id, async () => {
-            console.log("rrrrrrrrrrrrrrr->>>>>>>>>", message.header.id)
-
-            let response = await this.getkey(message.header.id)
+        return process_listener_event.on(message, async (reqId) => {
+            console.log("rrrrrrrrrrrrrrr->>>>>>>>>", reqId)
+            let response = await this.getkey(reqId)
             console.log("rrrrrrrrrrrrrrr->>>>>>>>>", response)
             var aftergetres = Date.now();
             response = JSON.parse(response);
@@ -98,10 +98,10 @@ class RPC_Queue {
 
         var client_service = new redis_client(this.config); //crate dedcaited client //listener
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
-        process_listener.on("message", (reqId) => {
-            console.log("on  0000", reqId)
-            this.EventEmitter.emit(reqId);
-        })
+        // process_listener.on("message", (reqId) => {
+        //     console.log("on  0000", reqId)
+        //     this.EventEmitter.emit(reqId);
+        // })
         process_listener.startListener();
     }
 }

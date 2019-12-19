@@ -1,6 +1,9 @@
 const EventEmitter = require('events')
 class procedure_listener extends EventEmitter {
 
+    // constructor() {
+    //     super()
+    // }
     constructor(client, publisher, serviceName, queueName, maxConsume, functionLogic) {
         super()
         this.client = client; //that consume
