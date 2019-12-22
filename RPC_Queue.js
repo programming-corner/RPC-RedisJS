@@ -22,23 +22,24 @@ class RPC_Queue {
         try {
             var reqRes = await this.dequeue_client.BRPOP('REQresults', 0);
             reqRes = JSON.parse(reqRes[1]);
-            console.log(reqRes)
-
-            this.EventEmitter.emit(reqRes.reqId, reqRes)
+            this.EventEmitter.emit(reqRes.ourId, reqRes);
+            this.getCallerMsg();
             //return reqRes;
         } catch (e) {
             console.log("cannot get res error >>> ", e);
         }
     }
 
-    // async send
-
-    async getkey(reqId) {
-        var value = await this.dequeue_client.get(reqId);
-        await this.dequeue_client.del(reqId);
-        return value
+    async nodeGetCallerMsg() {
+        try {
+            var reqRes = await this.dequeue_client.BRPOP('nodeREQresults', 0);
+            reqRes = JSON.parse(reqRes[1]);
+            this.EventEmitter.emit(reqRes.ourId, reqRes);
+            this.nodeGetCallerMsg();
+        } catch (e) {
+            console.log("cannot get res error >>> ", e);
+        }
     }
-
 
     //must check for param to throw error
     async callRemoteMethod(serviceName, queueName, methodName, param) {
@@ -47,13 +48,33 @@ class RPC_Queue {
 
         var message = this.formatMSG(serviceName, methodName, param); //format MSG
         var beforegetres = Date.now();
-        console.log(":::::::::::::::::::::::::::::::::::::::", message.header.id)
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
         this.getCallerMsg();
         return new Promise((resolve, reject) => {
-            var id = (message.header.parentReqId !== null) ? message.header.parentReqId : message.header.id;
-            console.log(id)
-            return this.EventEmitter.once(id, (resBody) => {
+            console.log("listenerOn", message.header.id)
+            return this.EventEmitter.once(message.header.id, (resBody) => {
+                let response = resBody
+                var aftergetres = Date.now();
+                delete response.result.timeTrack;
+                response.timeTrack.beforegetres = beforegetres;
+                response.timeTrack.aftergetres = aftergetres;
+                return resolve(response);
+            });
+        });
+    }
+
+    //must check for param to throw error
+    async nodeCallRemoteMethod(serviceName, queueName, methodName, param) {
+        if (this.resultSendClient)
+            throw Error("you arenot consumer ");
+
+        var message = this.formatMSG(serviceName, methodName, param); //format MSG
+        var beforegetres = Date.now();
+        await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
+        this.nodeGetCallerMsg();
+        return new Promise((resolve, reject) => {
+            console.log("node call remote listenerOn", message.header.id)
+            return this.EventEmitter.once(message.header.id, (resBody) => {
                 let response = resBody
                 var aftergetres = Date.now();
                 delete response.result.timeTrack;
@@ -94,12 +115,6 @@ class RPC_Queue {
 
         var client_service = new redis_client(this.config); //crate dedcaited client //listener
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
-
-        // process_listener.on("message", (reqId, res) => {
-        //     console.log("on  0000", reqId)
-        //     //  this.EventEmitter.emit(reqId);
-        // })
-        // console.log("PPPPPPPPPPPPPPPP", process_listener)
         process_listener.startListener();
     }
 }
