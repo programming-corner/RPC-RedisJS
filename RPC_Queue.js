@@ -9,12 +9,14 @@ class RPC_Queue {
     constructor(config) {
         this.config = config;
         if (config.callee) {
-            this.resultSendClient = new redis_client(this.config); //client to send result to user //for each RPC_queue
+            this.resultSendClient = new redis_client(this.config.redisConfig); //client to send result to user //for each RPC_queue
             this.maximunValue = config.maxWorkingMSG || 3;
         } else {
-            this.enqueue_client = new redis_client(this.config); //create dedicated redis client for enqueue
-            this.dequeue_client = new redis_client(this.config); //create dedicated redis client for dequeue
+            this.enqueue_client = new redis_client(this.config.redisConfig); //create dedicated redis client for enqueue
+            this.dequeue_client = new redis_client(this.config.redisConfig); //create dedicated redis client for dequeue
             this.EventEmitter = new EventEmitter();
+            this.resQueue = this.config.resQueue + process.pid
+            this.getCallerMsg(this.resQueue);
         }
     }
 
@@ -30,14 +32,12 @@ class RPC_Queue {
     }
 
     //must check for param to throw error
-    async callRemoteMethod(resQueue, serviceName, queueName, methodName, param) {
+    async callRemoteMethod(serviceName, queueName, methodName, param) {
         if (this.resultSendClient)
             throw Error("you arenot consumer ");
-
-        var message = this.formatMSG(serviceName, methodName, param, resQueue); //format MSG
+        var message = this.formatMSG(serviceName, methodName, param, this.resQueue); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        this.getCallerMsg(resQueue);
         return new Promise((resolve, reject) => {
             console.log("listenerOn", message.header.id)
             return this.EventEmitter.once(message.header.id, (resBody) => {
@@ -81,7 +81,7 @@ class RPC_Queue {
         else
             throw Error(`${serviceName} is registered before`);
 
-        var client_service = new redis_client(this.config); //crate dedcaited client //listener
+        var client_service = new redis_client(this.config.redisConfig); //crate dedcaited client //listener
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
         process_listener.startListener();
     }
