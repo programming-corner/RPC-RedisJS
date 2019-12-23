@@ -49,15 +49,8 @@ class procedure_listener {
         res = Object.assign({}, callerMSG, {
             result: res
         });
-
-        res.ourId = callerMSG.header.id;
-        if (!callerMSG.header.parentReqId) {
-            await this.publisher.lpush("REQresults", JSON.stringify(res)); //start rpc
-
-        }
-        else {
-            await this.publisher.lpush("nodeREQresults", JSON.stringify(res)); //start rpc
-        }
+        res.reqId = callerMSG.header.id;
+        await this.publisher.lpush(callerMSG.header.processResQueue, JSON.stringify(res)); //start rpc
         this.currentConsLen--;
         this.reStartListener(); //restart consumer
     }

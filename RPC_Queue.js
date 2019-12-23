@@ -18,38 +18,26 @@ class RPC_Queue {
         }
     }
 
-    async getCallerMsg() {
+    async getCallerMsg(bResQueue) {
         try {
-            var reqRes = await this.dequeue_client.BRPOP('REQresults', 0);
+            var reqRes = await this.dequeue_client.BRPOP(bResQueue, 0);
             reqRes = JSON.parse(reqRes[1]);
-            this.EventEmitter.emit(reqRes.ourId, reqRes);
-            this.getCallerMsg();
-            //return reqRes;
-        } catch (e) {
-            console.log("cannot get res error >>> ", e);
-        }
-    }
-
-    async nodeGetCallerMsg() {
-        try {
-            var reqRes = await this.dequeue_client.BRPOP('nodeREQresults', 0);
-            reqRes = JSON.parse(reqRes[1]);
-            this.EventEmitter.emit(reqRes.ourId, reqRes);
-            this.nodeGetCallerMsg();
+            this.EventEmitter.emit(reqRes.reqId, reqRes);
+            this.getCallerMsg(bResQueue);
         } catch (e) {
             console.log("cannot get res error >>> ", e);
         }
     }
 
     //must check for param to throw error
-    async callRemoteMethod(serviceName, queueName, methodName, param) {
+    async callRemoteMethod(resQueue, serviceName, queueName, methodName, param) {
         if (this.resultSendClient)
             throw Error("you arenot consumer ");
 
-        var message = this.formatMSG(serviceName, methodName, param); //format MSG
+        var message = this.formatMSG(serviceName, methodName, param, resQueue); //format MSG
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        this.getCallerMsg();
+        this.getCallerMsg(resQueue);
         return new Promise((resolve, reject) => {
             console.log("listenerOn", message.header.id)
             return this.EventEmitter.once(message.header.id, (resBody) => {
@@ -64,28 +52,7 @@ class RPC_Queue {
     }
 
     //must check for param to throw error
-    async nodeCallRemoteMethod(serviceName, queueName, methodName, param) {
-        if (this.resultSendClient)
-            throw Error("you arenot consumer ");
-
-        var message = this.formatMSG(serviceName, methodName, param); //format MSG
-        var beforegetres = Date.now();
-        await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        this.nodeGetCallerMsg();
-        return new Promise((resolve, reject) => {
-            console.log("node call remote listenerOn", message.header.id)
-            return this.EventEmitter.once(message.header.id, (resBody) => {
-                let response = resBody
-                var aftergetres = Date.now();
-                delete response.result.timeTrack;
-                response.timeTrack.beforegetres = beforegetres;
-                response.timeTrack.aftergetres = aftergetres;
-                return resolve(response);
-            });
-        });
-    }
-
-    formatMSG(serviceName, methodName, param) {
+    formatMSG(serviceName, methodName, param, processResQueue) {
         var parentReqId = param.parentReqId;
         delete param.parentReqId
         return {
@@ -94,6 +61,7 @@ class RPC_Queue {
                 parentReqId: parentReqId,
                 serviceName: serviceName,
                 methodName: methodName,
+                processResQueue: processResQueue
             },
             body: param,
             timeTrack: {
