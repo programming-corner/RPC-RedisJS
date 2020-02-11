@@ -1,7 +1,7 @@
 class procedure_listener {
 
     constructor(client, publisher, serviceName, queueName, maxConsume, functionLogic) {
-        this.client = client; //that consume
+        this.client = client; //that consume that blocked
         this.publisher = publisher;
         this.serviceName = serviceName;
         this.queueName = queueName;

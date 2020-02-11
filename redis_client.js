@@ -26,6 +26,8 @@ module.exports = class {
         this.get = promisify(this.client.get).bind(this.client);
         this.set = promisify(this.client.set).bind(this.client);
         this.del = promisify(this.client.del).bind(this.client);
+        this.publish = promisify(this.client.publish).bind(this.client);
+        // this.subscribe = promisify(this.client.subscribe).bind(this.client);
     }
 
     /* Calling unref() will allow this program to exit immediately after the get
