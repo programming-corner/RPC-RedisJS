@@ -8,13 +8,15 @@ class RPC_Queue {
     //must check for param to throw error
     constructor(config) {
         this.config = config;
+        this.clientName = this.config.name || "pid:" + process.pid// caller|| callee
         if (config.callee) {
-            this.resultSendClient = new redis_client(this.config.redisConfig); //client to send result to user //for each RPC_queue publisher
+            //client to send result to user //for each RPC_queue publisher
+            this.resultSendClient = new redis_client(`${this.clientName}_resultPublisher`, this.config.redisConfig);
             this.maximunValue = config.maxWorkingMSG || 3;
         } else {
             //>>node call node or gateway call node
-            this.enqueue_client = new redis_client(this.config.redisConfig); //create dedicated redis client for enqueue
-            this.dequeue_client = new redis_client(this.config.redisConfig); //create dedicated redis client for dequeue
+            this.enqueue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for enqueue
+            this.dequeue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for dequeue
             this.EventEmitter = new EventEmitter();
             this.resQueue = this.config.resQueue + process.pid
             this.getCallerMsg(this.resQueue);
@@ -23,14 +25,14 @@ class RPC_Queue {
 
     //signal
     async publishMSG(channel, msg) {
-        var publisher = new redis_client(this.config.redisConfig); //crate dedcaited client //listener
+        var publisher = new redis_client(this.clientName + '_publisherMSG', this.config.redisConfig); //crate dedcaited client //listener
         var reply = await publisher.publish(channel, msg)
         console.log("::::::::::::::::::::publisher ", reply)
         return reply;
     }
 
     async subscribeMSG(channel) {
-        var subscriber = new redis_client(this.config.redisConfig); //crate dedcaited client //listener
+        var subscriber = new redis_client(this.clientName + '_subscribeMSG', this.config.redisConfig); //crate dedcaited client //listener
         return new Promise((resolve, reject) => {
             subscriber.client.on("message", (channel, message) => {
                 console.log("listener subscribe Received data :" + channel, " messag " + message, "pid    ", process.pid);
@@ -103,7 +105,7 @@ class RPC_Queue {
         else
             throw Error(`${serviceName} is registered before`);
 
-        var client_service = new redis_client(this.config.redisConfig); //crate dedcaited client //listener
+        var client_service = new redis_client(this.clientName + "listener_" + queueName, this.config.redisConfig); //crate dedcaited client //listener
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
         process_listener.startListener();
     }

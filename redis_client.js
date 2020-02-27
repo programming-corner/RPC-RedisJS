@@ -3,8 +3,8 @@ const { promisify } = require('util');
 
 module.exports = class {
 
-    constructor(aConfig) {
-        console.log("user Rpc connected constructor", aConfig)
+    constructor(aName, aConfig) {
+        this.name = aName;
         this.client = redis.createClient(aConfig.port, aConfig.host,
             { no_ready_check: true });
 
@@ -16,8 +16,20 @@ module.exports = class {
                     console.log('Redis client connected');
             });
 
-        this.client.on("error", function (err) {
-            console.log("Error " + err);
+        this.client.on("error", (err) => {
+            console.log("Error RPC connection error " + err);
+        });
+
+        this.client.on("connect", () => {
+            console.log(`${this.name} :: connect successfully`);
+        });
+
+        //rename client
+        this.client.client('SETNAME', this.name, (err, res) => {
+            if (!err)
+                console.log(" client name : ", this.name, res);
+            else
+                console.error("error in client name : ", this.name, err);
         });
 
         this.BRPOP = promisify(this.client.BRPOP).bind(this.client);
