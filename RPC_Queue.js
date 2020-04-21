@@ -78,13 +78,17 @@ class RPC_Queue {
     //must check for param to throw error
     formatMSG(serviceName, methodName, param, processResQueue) {
         var parentReqId = param.parentReqId;
-        delete param.parentReqId
+        var redisDB = param.redisDB;
+
+        delete param.parentReqId;
+        delete param.redisDB;
         return {
             header: {
                 id: uuid(),
                 parentReqId: parentReqId,
                 serviceName: serviceName,
                 methodName: methodName,
+                redisDB: redisDB,
                 processResQueue: processResQueue
             },
             body: param,
