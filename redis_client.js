@@ -21,15 +21,15 @@ module.exports = class {
         });
 
         this.client.on("connect", () => {
-            console.log(`${this.name} :: connect successfully`);
+            // console.log(`${this.name} :: connect successfully`);
         });
 
         //rename client
         this.client.client('SETNAME', this.name, (err, res) => {
-            if (!err)
-                console.log(" client name : ", this.name, res);
-            else
-                console.error("error in client name : ", this.name, err);
+            // if (!err)
+            //     console.log(" client name : ", this.name, res);
+            // else
+            //     console.error("error in client name : ", this.name, err);
         });
 
         this.BRPOP = promisify(this.client.BRPOP).bind(this.client);
