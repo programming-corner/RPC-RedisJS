@@ -42,8 +42,13 @@ class procedure_listener {
             res = await this.functionLogic(callerMSG);
         } catch (error) {
             res = {
-                error: `cannot process ${callerMSG.header.methodName}`,
-                detail: error.stack
+                result: null,
+                status: {
+                    level: -2,
+                    code: "404",
+                    error: `cannot process ${callerMSG.header.methodName}`,
+                    detail: error.stack
+                }
             }
         }
         res = Object.assign({}, callerMSG, {
