@@ -1,31 +1,49 @@
 const redis_client = require('./redis_client');
-const EventEmitter = require('events')
+const EventEmitter = require('events');
 const procedure_listener = require('./procedure_listener');
 var uuid = require('uuidv4').uuid;
 var registered_services = [];
-class RPC_Queue {
+class RPC_Queue extends EventEmitter {
 
     //must check for param to throw error
+
+
     constructor(config) {
+        super();
         this.config = config;
         this.clientName = this.config.name || "pid:" + process.pid// caller|| callee
         if (config.callee) {
             //client to send result to user //for each RPC_queue publisher
             this.resultSendClient = new redis_client(`${this.clientName}_resultPublisher`, this.config.redisConfig);
+            this.handleListenerEvents(this.resultSendClient);
             this.maximunValue = config.maxWorkingMSG || 3;
         } else {
             //>>node call node or gateway call node
             this.enqueue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for enqueue
+            this.handleListenerEvents(this.enqueue_client);
             this.dequeue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for dequeue
+            this.handleListenerEvents(this.dequeue_client);
             this.EventEmitter = new EventEmitter();
             this.resQueue = this.config.resQueue + process.pid
             this.getCallerMsg(this.resQueue);
         }
     }
 
+    handleListenerEvents(redisClient) {
+        redisClient.on("error", (error) => {
+            let data = JSON.stringify({ error, msg: "Error RPC connection error " });
+            this.emit("error_RPC", data);
+        });
+
+        redisClient.on("connect", () => {
+            let data = JSON.stringify({ msg: " RPC connected " });
+            this.emit("connnect_redis", data);
+        });
+    }
     //signal
     async publishMSG(channel, msg) {
         var publisher = new redis_client(this.clientName + '_publisherMSG', this.config.redisConfig); //crate dedcaited client //listener
+        this.handleListenerEvents(publisher);
         var reply = await publisher.publish(channel, msg)
         console.log("::::::::::::::::::::publisher ", reply)
         return reply;
