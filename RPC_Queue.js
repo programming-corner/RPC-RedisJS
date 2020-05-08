@@ -1,7 +1,8 @@
 const redis_client = require('./redis_client');
 const EventEmitter = require('events');
 const procedure_listener = require('./procedure_listener');
-var uuid = require('uuidv4').uuid;
+const uuid = require('uuidv4').uuid;
+
 var registered_services = [];
 class RPC_Queue extends EventEmitter {
 
@@ -32,12 +33,12 @@ class RPC_Queue extends EventEmitter {
     handleListenerEvents(redisClient) {
         redisClient.on("error", (error) => {
             let data = JSON.stringify({ error, msg: "Error RPC connection error " });
-            this.emit("error_RPC", data);
+            this.emit("RPCerror_redis", data);
         });
 
         redisClient.on("connect", () => {
             let data = JSON.stringify({ msg: " RPC connected " });
-            this.emit("connnect_redis", data);
+            this.emit("RPCconnnect_redis", data);
         });
     }
     //signal
@@ -52,11 +53,11 @@ class RPC_Queue extends EventEmitter {
     async subscribeMSG(channel) {
         var subscriber = new redis_client(this.clientName + '_subscribeMSG', this.config.redisConfig); //crate dedcaited client //listener
         return new Promise((resolve, reject) => {
-            subscriber.client.on("message", (channel, message) => {
+            subscriber.on("message", (channel, message) => {
                 console.log("listener subscribe Received data :" + channel, " messag " + message, "pid    ", process.pid);
                 resolve(message)
             });
-            subscriber.client.subscribe(channel, (err, reply) => {
+            subscriber.subscribe(channel, (err, reply) => {
                 console.log("subscribe is set up err ", err, "reply ", reply, "pid  ", process.pid);
             });
         });
