@@ -22,7 +22,7 @@ class RPC_Queue extends EventEmitter {
             //>>node call node or gateway call node
             this.enqueue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for enqueue
             this.handleListenerEvents(this.enqueue_client);
-            this.dequeue_client = new redis_client(`${this.clientName}_enqueue`, this.config.redisConfig); //create dedicated redis client for dequeue
+            this.dequeue_client = new redis_client(`${this.clientName}_dequeue`, this.config.redisConfig); //create dedicated redis client for dequeue
             this.handleListenerEvents(this.dequeue_client);
             this.EventEmitter = new EventEmitter();
             this.resQueue = this.config.resQueue + process.pid
@@ -32,7 +32,7 @@ class RPC_Queue extends EventEmitter {
 
     handleListenerEvents(redisClient) {
         redisClient.on("error", (error) => {
-            let data = JSON.stringify({ error, msg: "Error RPC connection error " });
+            let data = JSON.stringify({ error, msg: "Error RPC connection error ", time: new Date() });
             this.emit("RPCerror_redis", data);
         });
 
@@ -129,6 +129,8 @@ class RPC_Queue extends EventEmitter {
             throw Error(`${serviceName} is registered before`);
 
         var client_service = new redis_client(this.clientName + "listener_" + queueName, this.config.redisConfig); //crate dedcaited client //listener
+        this.handleListenerEvents(client_service);
+
         var process_listener = new procedure_listener(client_service, this.resultSendClient, serviceName, queueName, maxWorkingMSG, callbackFun);
         process_listener.startListener();
     }
