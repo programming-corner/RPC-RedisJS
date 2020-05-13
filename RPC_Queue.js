@@ -7,8 +7,6 @@ var registered_services = [];
 class RPC_Queue extends EventEmitter {
 
     //must check for param to throw error
-
-
     constructor(config) {
         super();
         this.config = config;
