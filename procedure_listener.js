@@ -11,7 +11,7 @@ class procedure_listener {
     }
 
     async startListener() {
-        console.log("listener", this.currentConsLen, this.maxConsume)
+        console.log('[', new Date(new Date() + 'UTC'), ']', "listener", this.currentConsLen, this.maxConsume)
         while (this.currentConsLen < this.maxConsume) {
             var callerMSG = await this.getCallerMsg();
             this.currentConsLen++;
@@ -26,7 +26,7 @@ class procedure_listener {
             msg.timeTrack.dequeueTime = Date.now();
             return msg;
         } catch (e) {
-            console.log("consumer error >>> ", e);
+            console.log('[', new Date(new Date() + 'UTC'), ']', "consumer error >>> ", e);
         }
     }
 
@@ -45,7 +45,7 @@ class procedure_listener {
                 result: null,
                 status: {
                     level: -2,
-                    code: "404",
+                    code: "RPCDETECTERROR",
                     error: `cannot process ${callerMSG.header.methodName}`,
                     detail: error.stack
                 }

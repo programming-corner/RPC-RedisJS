@@ -1,7 +1,7 @@
 const redis_client = require('./redis_client');
 const EventEmitter = require('events');
 const procedure_listener = require('./procedure_listener');
-const uuid = require('uuidv4').uuid;
+const uuid = require('uuidv4').default;
 
 var registered_services = [];
 class RPC_Queue extends EventEmitter {
@@ -44,7 +44,7 @@ class RPC_Queue extends EventEmitter {
         var publisher = new redis_client(this.clientName + '_publisherMSG', this.config.redisConfig); //crate dedcaited client //listener
         this.handleListenerEvents(publisher);
         var reply = await publisher.publish(channel, msg)
-        console.log("::::::::::::::::::::publisher ", reply)
+        console.log('[', new Date(new Date() + 'UTC'), ']', "::::::::::::::::::::publisher ", reply)
         return reply;
     }
 
@@ -52,11 +52,11 @@ class RPC_Queue extends EventEmitter {
         var subscriber = new redis_client(this.clientName + '_subscribeMSG', this.config.redisConfig); //crate dedcaited client //listener
         return new Promise((resolve, reject) => {
             subscriber.on("message", (channel, message) => {
-                console.log("listener subscribe Received data :" + channel, " messag " + message, "pid    ", process.pid);
+                console.log('[', new Date(new Date() + 'UTC'), ']', "listener subscribe Received data :" + channel, " messag " + message, "pid    ", process.pid);
                 resolve(message)
             });
             subscriber.subscribe(channel, (err, reply) => {
-                console.log("subscribe is set up err ", err, "reply ", reply, "pid  ", process.pid);
+                console.log('[', new Date(new Date() + 'UTC'), ']', "subscribe is set up err ", err, "reply ", reply, "pid  ", process.pid);
             });
         });
     }
@@ -68,7 +68,7 @@ class RPC_Queue extends EventEmitter {
             this.EventEmitter.emit(reqRes.reqId, reqRes);
             this.getCallerMsg(bResQueue);
         } catch (e) {
-            console.log("cannot get res error >>> ", e);
+            console.log('[', new Date(new Date() + 'UTC'), ']', "cannot get res error >>> ", e);
         }
     }
 
@@ -80,7 +80,7 @@ class RPC_Queue extends EventEmitter {
         var beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
         return new Promise((resolve, reject) => {
-            console.log("listenerOn", message.header.id)
+            console.log('[', new Date(new Date() + 'UTC'), ']', "listenerOn", message.header.id)
             return this.EventEmitter.once(message.header.id, (resBody) => {
                 let response = resBody
                 var aftergetres = Date.now();
