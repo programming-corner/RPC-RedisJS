@@ -8,7 +8,7 @@ module.exports = class {
         this.client = redis.createClient(aConfig.port, aConfig.host,
             { no_ready_check: true });
         // this.client('SETNAME', this.name, (err, res) => {
-        //     console.log("setName", err, res);
+        //     console.log('[',new Date(new Date() + 'UTC'),']' , "setName", err, res);
         // });
         this.client.BRPOP = promisify(this.client.BRPOP).bind(this.client);
         this.client.lpush = promisify(this.client.lpush).bind(this.client);
@@ -26,7 +26,7 @@ module.exports = class {
     client-server connection is alive. */
 
     stop() {
-        console.log("stop redis client");
+        console.log('[', new Date(new Date() + 'UTC'), ']', "stop redis client");
         this.unref();
     }
 }
