@@ -1,7 +1,7 @@
 const redis_client = require('./redis_client');
 const EventEmitter = require('events');
 const procedure_listener = require('./procedure_listener');
-const uuid = require('uuidv4').default;
+const { v4: uuid } = require('uuid');
 
 var registered_services = [];
 class RPC_Queue extends EventEmitter {
