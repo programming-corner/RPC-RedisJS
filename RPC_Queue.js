@@ -96,17 +96,20 @@ class RPC_Queue extends EventEmitter {
     formatMSG(serviceName, methodName, param, processResQueue) {
         var parentReqId = param.parentReqId;
         var redisDB = param.redisDB;
+        var parentRef = param.parentRef; 
 
         delete param.parentReqId;
         delete param.redisDB;
+        delete param.parentRef;
         return {
             header: {
                 id: uuid(),
-                parentReqId: parentReqId,
-                serviceName: serviceName,
-                methodName: methodName,
-                redisDB: redisDB,
-                processResQueue: processResQueue
+                parentReqId,
+                serviceName,
+                methodName,
+                redisDB,
+                parentRef,
+                processResQueue
             },
             body: param,
             timeTrack: {

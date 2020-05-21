@@ -44,7 +44,7 @@ class procedure_listener {
             res = {
                 result: null,
                 status: {
-                    level: -2,
+                    level: -3,
                     code: "RPCDETECTERROR",
                     error: `cannot process ${callerMSG.header.methodName}`,
                     detail: error.stack
