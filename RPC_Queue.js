@@ -1,7 +1,7 @@
 const redis_client = require('./redis_client');
 const EventEmitter = require('events');
 const procedure_listener = require('./procedure_listener');
-const { v4: uuid } = require('uuid');
+const uuid = require('uuidv4').default;
 
 var registered_services = [];
 class RPC_Queue extends EventEmitter {
@@ -63,10 +63,11 @@ class RPC_Queue extends EventEmitter {
 
     async getCallerMsg(bResQueue) {
         try {
-            var reqRes = await this.dequeue_client.BRPOP(bResQueue, 0);
+            let reqRes = await this.dequeue_client.BRPOP(bResQueue, 0);
             reqRes = JSON.parse(reqRes[1]);
             this.EventEmitter.emit(reqRes.reqId, reqRes);
-            this.getCallerMsg(bResQueue);
+            reqRes = undefined;
+            return this.getCallerMsg(bResQueue);
         } catch (e) {
             console.log('[', new Date(new Date() + 'UTC'), ']', "cannot get res error >>> ", e);
         }
@@ -76,40 +77,35 @@ class RPC_Queue extends EventEmitter {
     async callRemoteMethod(serviceName, queueName, methodName, param) {
         if (this.resultSendClient)
             throw Error("you arenot consumer ");
-        var message = this.formatMSG(serviceName, methodName, param, this.resQueue); //format MSG
-        var beforegetres = Date.now();
+        let message = this.formatMSG(serviceName, methodName, param, this.resQueue); //format MSG
+        let beforegetres = Date.now();
         await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
         return new Promise((resolve, reject) => {
             console.log('[', new Date(new Date() + 'UTC'), ']', "listenerOn", message.header.id)
             return this.EventEmitter.once(message.header.id, (resBody) => {
-                let response = resBody
-                var aftergetres = Date.now();
-                delete response.result.timeTrack;
-                response.timeTrack.beforegetres = beforegetres;
-                response.timeTrack.aftergetres = aftergetres;
-                return resolve(response);
+                delete resBody.result.timeTrack;
+                resBody.timeTrack = { beforegetres: beforegetres, aftergetres: Date.now() }
+                resolve(resBody);
+                resBody = message = beforegetres = undefined;
             });
         });
     }
 
     //must check for param to throw error
     formatMSG(serviceName, methodName, param, processResQueue) {
-        var parentReqId = param.parentReqId;
-        var redisDB = param.redisDB;
-        var parentRef = param.parentRef; 
+        let parentReqId = param.parentReqId;
+        let redisDB = param.redisDB;
 
         delete param.parentReqId;
         delete param.redisDB;
-        delete param.parentRef;
         return {
             header: {
                 id: uuid(),
-                parentReqId,
-                serviceName,
-                methodName,
-                redisDB,
-                parentRef,
-                processResQueue
+                parentReqId: parentReqId,
+                serviceName: serviceName,
+                methodName: methodName,
+                redisDB: redisDB,
+                processResQueue: processResQueue
             },
             body: param,
             timeTrack: {

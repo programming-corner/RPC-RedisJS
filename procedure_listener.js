@@ -1,3 +1,7 @@
+const EventEmitter = require('events');
+function sleep(t) {
+    return new Promise(resolve => setTimeout(resolve, t))
+}
 class procedure_listener {
 
     constructor(client, publisher, serviceName, queueName, maxConsume, functionLogic) {
@@ -8,43 +12,62 @@ class procedure_listener {
         this.maxConsume = maxConsume;
         this.currentConsLen = 0;
         this.functionLogic = functionLogic;
+        this.EventEmitter = new EventEmitter();
+        this.blocked = false;
     }
 
     async startListener() {
-        console.log('[', new Date(new Date() + 'UTC'), ']', "listener", this.currentConsLen, this.maxConsume)
-        while (this.currentConsLen < this.maxConsume) {
-            var callerMSG = await this.getCallerMsg();
-            this.currentConsLen++;
-            this.processMSG(callerMSG);
-        }
-    };
-
-    async getCallerMsg() {
+        console.log('[', new Date(new Date() + 'UTC'), ']', "listener", this.currentConsLen, this.maxConsume);
         try {
-            var msg = await this.client.BRPOP(this.queueName, 0);
+            if (this.currentConsLen == this.maxConsume)
+                (this.blocked = true) && await this.toOpen();
+
+            let msg = await this.client.BRPOP(this.queueName, 0);
             msg = JSON.parse(msg[1]);
             msg.timeTrack.dequeueTime = Date.now();
-            return msg;
+            this.currentConsLen++;
+            this.processMSG(msg);
+            msg = undefined;
+            return this.startListener();
         } catch (e) {
             console.log('[', new Date(new Date() + 'UTC'), ']', "consumer error >>> ", e);
         }
+    };
+
+    async resolveBlock() {
+        if (this.currentConsLen < this.maxConsume && this.blocked)
+            return this.EventEmitter.emit("open");
+        if (this.currentConsLen == this.maxConsume) {
+            await sleep(1000);
+            return this.resolveBlock();
+        }
     }
 
-    async reStartListener() {
-        return this.startListener();
+    async toOpen() {
+        return new Promise((resolve, recject) => {
+            console.log("status Iam blocked ", this.blocked)
+            this.EventEmitter.once("open", () => {
+                this.blocked = false;
+                console.log("now I am free to accept msg    this.blocked:", this.blocked)
+                return resolve("open your gate");
+            });
+            if (this.currentConsLen != this.maxConsume && this.blocked)
+                this.EventEmitter.emit("open")
+            return this.resolveBlock();
+        })
     }
 
     async processMSG(callerMSG) {
         callerMSG.timeTrack.befProsTime = Date.now();
         //publish
-        var res;
+        let res;
         try {
             res = await this.functionLogic(callerMSG);
         } catch (error) {
             res = {
                 result: null,
                 status: {
-                    level: -3,
+                    level: -2,
                     code: "RPCDETECTERROR",
                     error: `cannot process ${callerMSG.header.methodName}`,
                     detail: error.stack
@@ -56,8 +79,10 @@ class procedure_listener {
         });
         res.reqId = callerMSG.header.id;
         await this.publisher.lpush(callerMSG.header.processResQueue, JSON.stringify(res)); //start rpc
-        this.currentConsLen--;
-        this.reStartListener(); //restart consumer
+        if (this.currentConsLen == this.maxConsume) this.EventEmitter.emit("open");
+        this.currentConsLen--
+        res = callerMSG = undefined;
+        return;
     }
 }
 
