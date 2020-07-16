@@ -44,7 +44,7 @@ class RPC_Queue extends EventEmitter {
         var publisher = new redis_client(this.clientName + '_publisherMSG', this.config.redisConfig); //crate dedcaited client //listener
         this.handleListenerEvents(publisher);
         var reply = await publisher.publish(channel, msg)
-        console.log('[', new Date(new Date() + 'UTC'), ']', "::::::::::::::::::::publisher ", reply)
+        console.log('[', new Date(new Date() + 'UTC'), ']', ">>>>>publisher ", reply)
         return reply;
     }
 
@@ -75,19 +75,23 @@ class RPC_Queue extends EventEmitter {
 
     //must check for param to throw error
     async callRemoteMethod(serviceName, queueName, methodName, param) {
-        if (this.resultSendClient)
-            throw Error("you arenot consumer ");
+        if (this.resultSendClient) throw Error("you are not consumer ");
         let message = this.formatMSG(serviceName, methodName, param, this.resQueue); //format MSG
         let beforegetres = Date.now();
-        await this.enqueue_client.lpush(queueName, JSON.stringify(message)); //start rpc
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             console.log('[', new Date(new Date() + 'UTC'), ']', "listenerOn", message.header.id)
-            return this.EventEmitter.once(message.header.id, (resBody) => {
-                delete resBody.result.timeTrack;
-                resBody.timeTrack = { beforegetres: beforegetres, aftergetres: Date.now() }
-                resolve(resBody);
-                resBody = message = beforegetres = undefined;
+            this.EventEmitter.once(message.header.id, (resBody) => {
+                try {
+                    delete resBody.result.timeTrack;
+                    resBody.timeTrack = { beforegetres: beforegetres, aftergetres: Date.now() }
+                    resolve(resBody);
+                    resBody = message = beforegetres = undefined;
+                } catch (ex) {
+                    reject(ex)
+                }
+
             });
+            await this.enqueue_client.lpush(queueName, JSON.stringify(message));
         });
     }
 
