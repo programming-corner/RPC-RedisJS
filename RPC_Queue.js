@@ -102,7 +102,7 @@ class RPC_Queue extends EventEmitter {
 
         delete param.parentReqId;
         delete param.redisDB;
-        return {
+        let MSG = {
             header: {
                 id: uuid(),
                 parentReqId: parentReqId,
@@ -116,6 +116,8 @@ class RPC_Queue extends EventEmitter {
                 enqueuTime: Date.now()
             }
         }
+        console.log('[', new Date(new Date() + 'UTC'), ']', "request body envolve\n", JSON.stringify(MSG));
+        return MSG;
     }
 
     //must check for param to throw error
