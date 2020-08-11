@@ -5,8 +5,7 @@ module.exports = class {
 
     constructor(aName, aConfig) {
         this.name = aName;
-        this.client = redis.createClient(aConfig.port, aConfig.host,
-            { no_ready_check: true });
+        this.client = redis.createClient(aConfig);
         // this.client('SETNAME', this.name, (err, res) => {
         //     console.log('[',new Date(new Date() + 'UTC'),']' , "setName", err, res);
         // });
