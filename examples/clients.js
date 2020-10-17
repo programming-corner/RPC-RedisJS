@@ -1,7 +1,7 @@
 const RPC_client = require('../');
-let { redisConfigs } = require('./service_register_configs')
+let { redisConfig } = require('./configs')
 const config = {
-    redisConfig: redisConfigs,
+    redisConfig,
     resQueue: "gateWay",
     name: "gateway"
 };
@@ -23,16 +23,22 @@ getRPCInstance();
 let clients_requests = [
     {
         service: 'welcomeService',
-        methodName: "good-morning",
+        methodName: "goodmorning",
         body: {
             name: "developer"
         }
     }
 ]
 
-clients_requests.forEach(async ({ service, queueName, methodName, body }) => {
-    let resultData = await rpc_ins.callRemoteMethod(service,
-        `${service}_queue`, methodName, body);
-    console.log("request Param : ", { service, queueName, methodName, body }
-        , "\nresult Data:", resultData)
+clients_requests.forEach(async ({ service, methodName, body }) => {
+    console.log("before call Param : ", { service, queue: service, methodName, body })
+    for (var i = 0; i < 1; i++) {
+        body.name = body.name + i
+        rpc_ins.callRemoteMethod(service, `${service}`, methodName, body).then(data => {
+            console.log("request Param : ", { service, queue: service, methodName, body }
+                , "\nresult Data:", data)
+        })
+
+    }
+
 })
