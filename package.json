@@ -1,0 +1,39 @@
+{
+  "name": "rpc-redisjs",
+  "version": "1.0.0",
+  "description": "implement Remote procedure call (RPC) technology using java script and Redis features.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/programming-corner/RPC-RedisJS.git"
+  },
+  "keywords": [
+    "RPC",
+    "redis",
+    "javaScript",
+    "broker",
+    "messageQueuing",
+    "nodejs",
+    "transaction",
+    "pubsub"
+  ],
+  "author": {
+    "name": "programming-corner",
+    "email": "procorner20@gmail.com"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/programming-corner/RPC-RedisJS/issues"
+  },
+  "homepage": "https://github.com/programming-corner/RPC-RedisJS#readme",
+  "dependencies": {
+    "redis": "^3.0.2",
+    "uuid": "^8.3.1"
+  }
+}
