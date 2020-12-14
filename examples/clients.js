@@ -27,18 +27,32 @@ let clients_requests = [
         body: {
             name: "developer"
         }
+    },
+    {
+        service: 'mathService',
+        methodName: "sum",
+        body: {
+            param1: 5,
+            param2: 1,
+
+        }
     }
 ]
 
 clients_requests.forEach(async ({ service, methodName, body }) => {
     console.log("before call Param : ", { service, queue: service, methodName, body })
-    for (var i = 0; i < 1; i++) {
-        body.name = body.name + i
+    for (var i = 0; i < 2; i++) {
+        //body.name = body.name + i
         rpc_ins.callRemoteMethod(service, `${service}`, methodName, body).then(data => {
             console.log("request Param : ", { service, queue: service, methodName, body }
                 , "\nresult Data:", data)
         })
 
     }
-
 })
+
+
+setTimeout(() => {
+    rpc_ins.stop();
+}, 20000);
+

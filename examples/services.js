@@ -1,16 +1,11 @@
 let { redisConfig } = require('./configs')
 const RPC = require('../');
 let rpc_ins = new RPC({ redisConfig, callee: true });
-function getRPCInstance() {
-    if (rpc_ins) return rpc_ins; RPCerror_redis
-    rpc_ins = new RPC_client(config);
-    rpc_ins.on('', (data) => {
-    });
-    rpc_ins.on('RPCconnnect_redis', (data) => {
-    });
-    return rpc_ins
-}
-getRPCInstance();
+rpc_ins.on('RPCerror_redis', (data) => {
+    console.log("rpc on error",data);
+});
+rpc_ins.on('RPCconnnect_redis', (data) => {
+});
 
 function timeout(t) {
     return new Promise(resolve => setTimeout(resolve, t));
