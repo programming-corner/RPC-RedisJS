@@ -21,6 +21,7 @@ let services = {
                 return `good morning ${body.name}`
             }
             this.goodbye = body => { return `good bye ${body.name}` }
+            //handle reqBody based on methodName 
             return await this[reqBody.header.methodName](reqBody.body)
         }
     },
@@ -29,6 +30,7 @@ let services = {
         methods: async function methods(reqBody) {
             this.sum = (body) => { return body.param1 + body.param2 };
             this.subtract = (body) => { return body.param1 - body.param2 }
+            //handle reqBody based on methodName 
             return await this[reqBody.header.methodName](reqBody.body)
         }
     }
@@ -36,13 +38,13 @@ let services = {
 
 for (const [serviceName, { methods, maxWorkingMSG = 5 }] of Object.entries(services)) {
 
-    console.log(`register service ${serviceName} on Queue ${serviceName}_queue`);
-    rpc_ins.registerRemoteService(serviceName, serviceName,
-        maxWorkingMSG, methods).then(() => {
-            console.log(`register ${serviceName} success`);
-        }).catch(error => {
-            console.error("error data", error)
-        })
+    let serviceQueue = `${serviceName}_queue`;
+    console.log(`register service ${serviceName} on Queue ${serviceQueue}`);
+
+    //  methods take role as handle callbackfn
+    rpc_ins.registerRemoteService(serviceName, serviceQueue, maxWorkingMSG, methods).then(() => {
+        console.log(`register ${serviceName} success`);
+    }).catch(error => {
+        console.error("error data", error)
+    })
 }
-
-

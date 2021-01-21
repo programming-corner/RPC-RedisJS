@@ -40,11 +40,11 @@ let clients_requests = [
 ]
 
 clients_requests.forEach(async ({ service, methodName, body }) => {
-    console.log("before call Param : ", { service, queue: service, methodName, body })
+    console.log("before call Param : ", { service, queue: `${service}_queue`, methodName, body })
     for (var i = 0; i < 2; i++) {
         //body.name = body.name + i
-        rpc_ins.callRemoteMethod(service, `${service}`, methodName, body).then(data => {
-            console.log("request Param : ", { service, queue: service, methodName, body }
+        rpc_ins.callRemoteMethod(service, `${service}_queue`, methodName, body).then(data => {
+            console.log("request Param : ", { service, queue: `${service}_queue`, methodName, body }
                 , "\nresult Data:", data)
         })
 
