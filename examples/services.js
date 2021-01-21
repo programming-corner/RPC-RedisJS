@@ -1,8 +1,8 @@
-let { redisConfig } = require('./configs')
+let { redisConfig } = require('./configs');
 const RPC = require('../');
-let rpc_ins = new RPC({ redisConfig, callee: true });
+let rpc_ins = new RPC({ redisConfig, serviceProvider: true });
 rpc_ins.on('RPCerror_redis', (data) => {
-    console.log("rpc on error",data);
+    console.log("rpc on error", data);
 });
 rpc_ins.on('RPCconnnect_redis', (data) => {
 });
