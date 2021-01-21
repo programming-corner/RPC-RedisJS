@@ -37,12 +37,12 @@ $ node clients.js
 
 ---
 
-- RPC callee
+- RPC serviceProvider
 
 ```js
 let { redisConfig } = require('./configs')
 const RPC = require('../');
-let rpc_ins = new RPC({ redisConfig, callee: true });
+let rpc_ins = new RPC({ redisConfig, serviceProvider: true });
 rpc_ins.on('RPCerror_redis', (data) => {
     console.log("rpc on error",data);
 });
@@ -51,7 +51,7 @@ rpc_ins.on('RPCconnnect_redis', (data) => {
 // ...check examples folder services.js file
 ```
 
-- RPC caller
+- RPC serviceConsumer
 
 ```js
 const RPC_client = require('../');
